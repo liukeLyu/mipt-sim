@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 
-KEYS = ["records", "seeds", "negativity", "log_negativity", "mutual_information"]
+KEYS = ["records", "seeds", "negativity", "log_negativity"]
 
 out, inputs = sys.argv[1], sys.argv[2:]
 parts = [np.load(f) for f in inputs]
