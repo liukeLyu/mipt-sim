@@ -69,7 +69,7 @@ What PennyLane does well here is exact outcome averages. `mipt_sim.pennylane_che
 ## Use
 
 ```bash
-pip install -e ../multipartite-entanglement-detection-toolkit
+pip install git+https://github.com/liukeLyu/multipartite-entanglement-detection-toolkit   # install first: medt is a dependency and is not on PyPI
 pip install -e .               # the simulator (NumPy only)
 pip install -e ".[dev]"        # adds PennyLane (for the cross-check), pytest, ruff, matplotlib
 pytest -q                      # 14 tests, a few seconds

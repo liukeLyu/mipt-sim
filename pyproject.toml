@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "mipt-sim"
 version = "0.1.0"
 description = "Measurement-induced phase transition in Haar brickwork circuits: a NumPy state-vector simulator"
 requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Liuke Lyu" }]
 dependencies = ["numpy", "medt"]
 
 [project.optional-dependencies]
