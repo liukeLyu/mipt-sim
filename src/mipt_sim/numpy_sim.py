@@ -42,14 +42,19 @@ def measure_qubit(psi: np.ndarray, q: int, rng: np.random.Generator) -> tuple[np
     return psi, outcome
 
 
-def half_chain_entropy(psi: np.ndarray, start: int = 0, base: float = 2.0) -> float:
-    """Von Neumann entropy of the n/2 consecutive qubits start, start+1, ... (periodic), via Schmidt values."""
+def interval_entropy(psi: np.ndarray, length: int, start: int = 0, base: float = 2.0) -> float:
+    """Von Neumann entropy of the consecutive qubits start, ..., start + length - 1 (periodic), via Schmidt values."""
     n = psi.ndim
     if start % n:
         psi = np.transpose(psi, np.roll(np.arange(n), -start))
-    s = np.linalg.svd(psi.reshape(2 ** (n // 2), -1), compute_uv=False) ** 2
+    s = np.linalg.svd(psi.reshape(2**length, -1), compute_uv=False) ** 2
     s = s[s > 1e-14]
     return float(-np.sum(s * np.log(s)) / np.log(base))
+
+
+def half_chain_entropy(psi: np.ndarray, start: int = 0, base: float = 2.0) -> float:
+    """Von Neumann entropy of half the ring, starting at qubit start."""
+    return interval_entropy(psi, psi.ndim // 2, start, base)
 
 
 def region_entropy(psi: np.ndarray, region, base: float = 2.0) -> float:

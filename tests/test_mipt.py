@@ -6,6 +6,7 @@ from mipt_sim import (
     brickwork_pairs,
     haar_unitary,
     half_chain_entropy,
+    interval_entropy,
     measure_qubit,
     random_circuit,
     region_entropy,
@@ -54,6 +55,8 @@ def test_half_chain_entropy_matches_medt():
     assert np.isclose(half_chain_entropy(psi), region_entropy(psi, [0, 1, 2, 3]))
     assert np.isclose(half_chain_entropy(psi, 3), region_entropy(psi, [3, 4, 5, 6]))
     assert np.isclose(half_chain_entropy(psi, 6), region_entropy(psi, [6, 7, 0, 1]))
+    assert np.isclose(interval_entropy(psi, 3, 7), region_entropy(psi, [7, 0, 1]))
+    assert np.isclose(interval_entropy(psi, 1, 2), region_entropy(psi, [2]))
     # complementary regions of a pure state have equal entropy
     assert np.isclose(region_entropy(psi, [7, 0, 1]), region_entropy(psi, [2, 3, 4, 5, 6]))
 

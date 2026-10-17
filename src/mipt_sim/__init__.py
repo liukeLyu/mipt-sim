@@ -9,6 +9,7 @@ from .circuit import brickwork_pairs, haar_unitary
 from .numpy_sim import (
     apply_gate,
     half_chain_entropy,
+    interval_entropy,
     measure_qubit,
     random_circuit,
     region_entropy,
@@ -22,6 +23,7 @@ __all__ = [
     "brickwork_pairs",
     "haar_unitary",
     "half_chain_entropy",
+    "interval_entropy",
     "measure_qubit",
     "random_circuit",
     "region_entropy",
