@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pl-mipt"
+version = "0.1.0"
+description = "Measurement-induced phase transition in Haar brickwork circuits, simulated with PennyLane"
+requires-python = ">=3.10"
+dependencies = ["numpy", "pennylane>=0.40", "medt"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "matplotlib"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120

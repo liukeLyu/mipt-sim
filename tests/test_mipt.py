@@ -1,0 +1,80 @@
+import numpy as np
+import pennylane as qml
+import pytest
+
+from pl_mipt import (
+    apply_gate,
+    brickwork_pairs,
+    circuit_qnode,
+    haar_unitary,
+    half_chain_entropy,
+    measure_qubit,
+    random_circuit,
+    region_entropy,
+    run_circuit,
+    run_trajectory,
+)
+
+
+def random_state(n, rng):
+    psi = rng.standard_normal((2,) * n) + 1j * rng.standard_normal((2,) * n)
+    return psi / np.linalg.norm(psi)
+
+
+@pytest.mark.parametrize("wires", [(0, 1), (4, 0), (1, 3)])
+def test_gate_matches_dense_matrix(wires):
+    rng = np.random.default_rng(0)
+    psi, u = random_state(5, rng), haar_unitary(4, rng)
+    dense = qml.matrix(qml.QubitUnitary(u, wires=wires), wire_order=range(5)) @ psi.reshape(-1)
+    for backend in ("pennylane", "numpy"):
+        assert np.allclose(apply_gate(psi, u, wires, backend).reshape(-1), dense)
+
+
+def test_haar_unitary_is_unitary():
+    u = haar_unitary(4, np.random.default_rng(1))
+    assert np.allclose(u.conj().T @ u, np.eye(4))
+
+
+def test_brickwork_is_periodic():
+    assert brickwork_pairs(6, 0) == [(0, 1), (2, 3), (4, 5)]
+    assert brickwork_pairs(6, 1) == [(1, 2), (3, 4), (5, 0)]
+
+
+def test_measurement_collapses_and_normalizes():
+    rng = np.random.default_rng(2)
+    psi = np.moveaxis(random_state(4, rng), 0, 3)  # non-contiguous, like a gate output
+    psi, m = measure_qubit(psi, 2, rng)
+    assert np.isclose(np.linalg.norm(psi), 1)
+    assert np.allclose(np.take(psi, 1 - m, axis=2), 0)
+
+
+def test_half_chain_entropy_matches_medt():
+    psi = random_state(8, np.random.default_rng(3))
+    assert np.isclose(half_chain_entropy(psi), region_entropy(psi, [0, 1, 2, 3]))
+    assert np.isclose(half_chain_entropy(psi, 3), region_entropy(psi, [3, 4, 5, 6]))
+    assert np.isclose(half_chain_entropy(psi, 6), region_entropy(psi, [6, 7, 0, 1]))
+    # complementary regions of a pure state have equal entropy
+    assert np.isclose(region_entropy(psi, [7, 0, 1]), region_entropy(psi, [2, 3, 4, 5, 6]))
+
+
+def test_no_measurement_reaches_volume_law_and_full_measurement_gives_product():
+    rng = np.random.default_rng(4)
+    n = 10
+    assert half_chain_entropy(run_trajectory(n, 0.0, rng)) > n / 2 - 1  # Page value ~ n/2 - 0.72
+    assert half_chain_entropy(run_trajectory(n, 1.0, rng)) < 1e-10
+
+
+def test_born_sampling_matches_pennylane_exact_average():
+    """Monte Carlo average over trajectories of a fixed circuit equals PennyLane's
+    exact outcome-averaged expectation values (tree-traversal mid-circuit measurements)."""
+    rng = np.random.default_rng(5)
+    n, ntraj = 4, 20000
+    layers = random_circuit(n, 0.5, rng, depth=4)
+    obs = [qml.Z(0), qml.Z(0) @ qml.Z(2), qml.X(1), qml.Y(3)]
+    exact = np.array(circuit_qnode(n, layers, obs)())
+    mats = [qml.matrix(o, wire_order=range(n)) for o in obs]
+    mc = np.zeros(len(obs))
+    for _ in range(ntraj):
+        v = run_circuit(n, layers, rng, backend="numpy").reshape(-1)
+        mc += [np.vdot(v, m @ v).real for m in mats]
+    assert np.allclose(mc / ntraj, exact, atol=4 / np.sqrt(ntraj))
