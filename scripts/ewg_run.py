@@ -21,7 +21,7 @@ from mipt_sim.ewg import sample
 
 L, P = 18, 0.17
 A, B = [0, 1], [7, 8]  # 0-based
-KEYS = ["negativity", "log_negativity", "mutual_information"]
+KEYS = ["negativity", "log_negativity"]
 
 
 def one(seed):

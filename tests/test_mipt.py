@@ -102,9 +102,8 @@ def test_pair_weights_on_bell_pairs():
     w = pair_weights(psi, [0, 1], [2, 3])
     assert np.isclose(w["log_negativity"], 2)
     assert np.isclose(w["negativity"], 1.5)
-    assert np.isclose(w["mutual_information"], 4)
     w = pair_weights(psi, [0], [1])  # unentangled pair
-    assert np.isclose(w["negativity"], 0) and np.isclose(w["mutual_information"], 0)
+    assert np.isclose(w["negativity"], 0)
 
 
 def test_weighted_graph_is_weighted_mean_of_records():
@@ -125,9 +124,6 @@ def test_pair_weights_match_medt():
     rho = keep_systems(psi.reshape(-1), a + b, [2] * 8)
     w = pair_weights(psi, a, b)
     assert np.isclose(w["log_negativity"], max(log_negativity(rho, [0, 1], [2] * 4), 0))
-    assert np.isclose(
-        w["mutual_information"], region_entropy(psi, a) + region_entropy(psi, b) - region_entropy(psi, a + b)
-    )
 
 
 def test_mirror_swaps_regions_and_layer_parity():

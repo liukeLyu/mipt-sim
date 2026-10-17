@@ -28,12 +28,6 @@ def measurement_record(layers, n: int) -> np.ndarray:
     return w
 
 
-def _entropy(rho: np.ndarray) -> float:
-    ev = np.linalg.eigvalsh(rho)
-    ev = ev[ev > 1e-14]
-    return float(-np.sum(ev * np.log2(ev)))
-
-
 def _reduced(psi: np.ndarray, keep) -> np.ndarray:
     """Reduced density matrix of the qubits `keep` (in that order) of a pure state tensor."""
     rest = [k for k in range(psi.ndim) if k not in keep]
@@ -42,7 +36,7 @@ def _reduced(psi: np.ndarray, keep) -> np.ndarray:
 
 
 def pair_weights(psi: np.ndarray, a, b) -> dict:
-    """Negativity, log-negativity and mutual information (bits) between regions a and b of a pure state.
+    """Negativity and log-negativity (bits) between regions a and b of a pure state.
 
     Plain NumPy, so it runs where SciPy (and hence medt) is not installed; tests check it against medt.
     """
@@ -54,10 +48,7 @@ def pair_weights(psi: np.ndarray, a, b) -> dict:
         axes[k], axes[na + nb + k] = axes[na + nb + k], axes[k]
     pt = np.transpose(pt, axes).reshape(rho_ab.shape)
     en = max(float(np.log2(np.abs(np.linalg.eigvalsh(pt)).sum())), 0.0)
-    rho_a = _reduced(psi, list(a))
-    rho_b = _reduced(psi, list(b))
-    mi = _entropy(rho_a) + _entropy(rho_b) - _entropy(rho_ab)
-    return {"negativity": (2**en - 1) / 2, "log_negativity": en, "mutual_information": mi}
+    return {"negativity": (2**en - 1) / 2, "log_negativity": en}
 
 
 def sample(n: int, p: float, a, b, seed: int, depth: int | None = None) -> tuple[np.ndarray, dict]:
