@@ -26,13 +26,17 @@ A guided tour is in [`examples/mipt_tour.ipynb`](examples/mipt_tour.ipynb).
 
 The entanglement entropy S of a block of ℓ consecutive qubits in a ring of L = 20, averaged over trajectories. At p = 0 it follows the curve of a random state, close to the maximum ℓ. At p = 1 it is zero. In between, at low p, S still grows in proportion to ℓ (volume law); at high p it saturates after a few qubits (area law); near p_c ≈ 0.17 it grows slowly, like log ℓ.
 
+## Long-range entanglement
+
+In ground states of gapped systems with local interactions, entanglement is short-ranged ([Lyu et al., arXiv:2412.12533](https://arxiv.org/abs/2412.12533)). At the critical point of the MIPT it is long-ranged: entanglement between two distant regions, averaged over trajectories, decays only as a power of their distance, roughly d^-8.8 for two parties, and faster for three or four ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969), Fig. 4).
+
 ## Where measurements create entanglement
 
-At the critical point, two distant regions are usually not entangled at all. An entanglement-weighted graph ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969)) shows which measurement patterns produce the rare cases that are. It averages the measurement record of every trajectory, weighted by the entanglement (negativity) it produced between regions A and B. White means measured at the usual rate p, blue less often, and red more often.
+Because of this steep decay, two distant regions are usually not entangled at all. An entanglement-weighted graph ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969)) shows which measurement patterns produce the rare cases that are. It averages the measurement record of every trajectory, weighted by the entanglement (negativity) it produced between regions A and B. White means measured at the usual rate p, blue less often, and red more often.
 
 ![entanglement-weighted graph](results/ewg_L18_p0.17.png)
 
-Here L = 18, p = 0.17, A = qubits (1, 2) and B = (8, 9). A and B themselves are almost never measured at the end. A low-measurement bulk joins them in the last time steps, while extra measurements just outside it, on the far side of the ring and between A and B at the very end, cut A and B off from the rest of the system. This is the same structure as Fig. 6 of the paper.
+Here L = 18, p = 0.17, A = qubits (1, 2) and B = (8, 9). A and B themselves are almost never measured at the end. A low-measurement bulk joins them in the last time steps, while extra measurements just outside it, on the far side of the ring and between A and B at the very end, cut A and B off from the rest of the system. This is the same structure as Fig. 6 of the paper. Much of it follows from the [monogamy of entanglement](https://en.wikipedia.org/wiki/Monogamy_of_entanglement): the less A and B are entangled with everything else, the more they can be entangled with each other.
 
 ## Code
 
