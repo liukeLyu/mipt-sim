@@ -1,6 +1,8 @@
 """Plot the negativity-weighted graph from results/ewg_L18_p0.17.npz.
 
 Colour: white at the bare measurement rate p, blue below, red above (as in arXiv:2602.04969, Fig. 6).
+Each trajectory is also counted mirrored (A and B swapped), which flips the brickwork parity, so
+circuits ending on even and odd layers enter half-half (see mipt_sim.ewg.mirror_sites).
 Time runs upward, so the final state (where A and B are evaluated) is the top row. Only the last
 `layers` time steps are shown: earlier ones sit at p within noise.
 Usage: python scripts/ewg_plot.py [in.npz] [out.png] [layers]
@@ -13,13 +15,13 @@ import numpy as np
 from matplotlib.colors import TwoSlopeNorm
 from matplotlib.ticker import MaxNLocator
 
-from mipt_sim.ewg import weighted_graph
+from mipt_sim.ewg import symmetrized_graph
 
 
 def plot_ewg(d, layers=20, ax=None):
     rec, p, L = d["records"], float(d["p"]), int(d["L"])
     A, B = list(d["A"]), list(d["B"])
-    g = weighted_graph(rec, d["negativity"])[-layers:]
+    g = symmetrized_graph(rec, d["negativity"], A, B)[-layers:]  # even/odd final layers half-half
     t0 = len(rec[0]) - layers  # time steps shown: t0 + 1 ... depth
     shift = (L - 1 - A[0] - B[-1]) // 2  # roll the ring so A and B sit in the middle
     cols = (np.arange(L) - shift) % L

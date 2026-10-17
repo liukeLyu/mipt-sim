@@ -71,3 +71,21 @@ def sample(n: int, p: float, a, b, seed: int, depth: int | None = None) -> tuple
 def weighted_graph(records: np.ndarray, weights: np.ndarray) -> np.ndarray:
     """W[E](t, x) from stacked records (samples, t, x) and weights (samples,)."""
     return np.tensordot(weights, records.astype(float), axes=1) / weights.sum()
+
+
+def mirror_sites(n: int, a, b) -> np.ndarray:
+    """Reflection x -> (a[0] + b[-1] - x) mod n of the ring, which swaps regions a and b.
+
+    When a[0] + b[-1] is even it also swaps the even and odd brickwork layers. Haar gates are
+    invariant under swapping their two qubits, and the negativity is symmetric in A and B, so a
+    mirrored trajectory is an exact sample of the circuit that starts and ends on the other layer
+    parity. Averaging a graph with its mirror image therefore gives circuits ending on even and
+    odd layers half-half.
+    """
+    return (a[0] + b[-1] - np.arange(n)) % n
+
+
+def symmetrized_graph(records: np.ndarray, weights: np.ndarray, a, b) -> np.ndarray:
+    """Weighted graph over the samples and their mirror images (see mirror_sites)."""
+    g = weighted_graph(records, weights)
+    return (g + g[:, mirror_sites(g.shape[1], a, b)]) / 2

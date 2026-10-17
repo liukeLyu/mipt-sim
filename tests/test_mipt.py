@@ -128,3 +128,18 @@ def test_pair_weights_match_medt():
     assert np.isclose(
         w["mutual_information"], region_entropy(psi, a) + region_entropy(psi, b) - region_entropy(psi, a + b)
     )
+
+
+def test_mirror_swaps_regions_and_layer_parity():
+    from mipt_sim.circuit import brickwork_pairs
+    from mipt_sim.ewg import mirror_sites, symmetrized_graph
+
+    n, a, b = 18, [0, 1], [7, 8]
+    m = mirror_sites(n, a, b)
+    assert sorted(m[a]) == b and sorted(m[b]) == a
+    for t in range(2):
+        mirrored = {frozenset(m[list(w)]) for w in brickwork_pairs(n, t)}
+        assert mirrored == {frozenset(w) for w in brickwork_pairs(n, t + 1)}
+    records = np.random.default_rng(0).random((5, 3, n)) < 0.3
+    g = symmetrized_graph(records, np.arange(1.0, 6.0), a, b)
+    assert np.allclose(g, g[:, m])

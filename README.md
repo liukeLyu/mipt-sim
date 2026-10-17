@@ -16,7 +16,7 @@ At the critical point, two distant regions are usually not entangled. An entangl
 
 ![entanglement-weighted graph](results/ewg_L18_p0.17.png)
 
-**Result** (261,500 trajectories, of which about 15,500 entangle A and B; bootstrap uncertainty about ±0.006 per cell). A and B are rarely measured at the very end, while the qubits between them are measured about twice as often as p in the last two layers. Below that, a low-measurement bulk (about 0.16) joins A and B for roughly six time steps, and a halo of extra measurements (0.18 to 0.24) covers the far side of the ring. This is the bulk-and-halo structure of the paper's Fig. 6, which used Mølmer–Sørensen gates instead of Haar gates. With only 20,000 trajectories the bulk was lost in the noise.
+**Result** (261,500 trajectories, of which about 15,500 entangle A and B; bootstrap uncertainty about ±0.006 per cell). Every trajectory is also counted mirrored, which swaps A and B and the brickwork parity, so circuits ending on even and odd layers enter half-half (`mipt_sim.ewg.symmetrized_graph`). A and B are rarely measured at the very end, while the qubits between them are measured about twice as often as p in the last two layers. Below that, a low-measurement bulk (about 0.16) joins A and B for roughly six time steps, and a halo of extra measurements (0.18 to 0.24) covers the far side of the ring. This is the bulk-and-halo structure of the paper's Fig. 6, which used Mølmer–Sørensen gates instead of Haar gates. With only 20,000 trajectories the bulk was lost in the noise.
 
 ## Model
 
@@ -72,7 +72,7 @@ What PennyLane does well here is exact outcome averages. `mipt_sim.pennylane_che
 pip install -e ../multipartite-entanglement-detection-toolkit
 pip install -e .               # the simulator (NumPy only)
 pip install -e ".[dev]"        # adds PennyLane (for the cross-check), pytest, ruff, matplotlib
-pytest -q                      # 13 tests, a few seconds
+pytest -q                      # 14 tests, a few seconds
 python scripts/sweep.py        # writes results/sweep.json (about 15 min on 4 cores)
 python scripts/plot.py         # writes results/entropy_vs_L.png
 python scripts/benchmark.py 12 16 20
