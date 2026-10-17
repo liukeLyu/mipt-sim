@@ -1,6 +1,6 @@
-# pennylane-mipt
+# mipt-sim
 
-The measurement-induced phase transition (MIPT) in Haar-random brickwork circuits, simulated with [PennyLane](https://pennylane.ai).
+The measurement-induced phase transition (MIPT) in Haar-random brickwork circuits, simulated on a dense state vector in NumPy, with a [PennyLane](https://pennylane.ai) cross-check.
 
 A chain of L qubits evolves under random two-qubit gates. Each qubit is also measured with probability p after every layer. Gates create entanglement and measurements destroy it. At low p, the half-chain entanglement entropy grows with L (a **volume law**). At high p it saturates (an **area law**, which in 1D means a constant). For Haar gates on qubits, the transition sits near p_c ≈ 0.17 ([Zabalo et al., arXiv:1911.00008](https://arxiv.org/abs/1911.00008)). For background, see [Li, Chen & Fisher, arXiv:1808.06134](https://arxiv.org/abs/1808.06134), [Skinner, Ruhman & Nahum, arXiv:1808.05953](https://arxiv.org/abs/1808.05953), and the review by [Fisher, Khemani, Nahum & Vijay, arXiv:2207.14280](https://arxiv.org/abs/2207.14280).
 
@@ -17,18 +17,25 @@ The model matches `Repo/QuantumCircuit/randUnitaryMIstate.m`:
 - After every layer, each qubit is measured in Z with probability p. The outcome is drawn with the Born rule.
 - The circuit has depth 2L layers. The half-chain von Neumann entropy (in bits) is averaged over trajectories and over two neighbouring cut positions. At large p, the entropy depends on whether the last layer acted on the cut bond, which gives an even/odd effect in L/2.
 
-## Two simulators
+## Simulator
 
-Both run the same algorithm on a dense `(2,)*L` state tensor and share the measurement and entropy code. Given the same random seed, they produce the same trajectory to rounding error (`tests/test_mipt.py`).
+`mipt_sim.numpy_sim` keeps the state as a dense `(2,)*L` tensor. A two-qubit gate is one `np.tensordot` on two axes, about 4·2^L operations, with no layer matrix and no state permutation. A Z measurement zeroes half of the tensor and renormalizes, with the outcome drawn by the Born rule. It needs only NumPy (and `medt` for `region_entropy`), and porting it to a GPU is a matter of swapping NumPy for CuPy or JAX.
 
-| module | gates applied by | needs PennyLane | use it for |
-|---|---|---|---|
-| `pl_mipt.numpy_sim` (also `pl_mipt.*`) | one `np.tensordot` per gate | no | production runs: the faster of the two, easier to read, and the natural starting point for a GPU port (swap NumPy for CuPy or JAX) |
-| `pl_mipt.pennylane_sim` | PennyLane's `apply_operation` kernel | yes | comparing with PennyLane, and `circuit_qnode`, the circuit as a native QNode with `qml.measure` |
+### Speed versus the MATLAB algorithm
 
-The sweep below uses `numpy_sim`.
+Seconds per trajectory at p = 0.17, depth 2L, on a 4-core cloud machine (`scripts/benchmark.py`). Divide by 2L for the time per layer.
 
-## How PennyLane is used, and where it falls short
+| L | `numpy_sim` | NumPy port of `randUnitaryMIstate.m` |
+|---|---|---|
+| 12 | 0.011 | 0.010 |
+| 16 | 0.12 | 0.12 |
+| 18 | 0.64 | 0.58 |
+| 20 | 2.4 | 2.7 |
+| 22 | 24 | 28 |
+
+The two run within about 10% of each other. The port (`scripts/matlab_port.py`) runs the same steps as the MATLAB code: a Kronecker-product layer, a state permutation for odd layers, and a block projector. This table does not time MATLAB itself. For a direct comparison, run `tic; randUnitaryMIstate(20, 0.17, 20); toc` in MATLAB. Larger L or many more trajectories would need a GPU or batched trajectories, not a different CPU library.
+
+## Why PennyLane is only a cross-check
 
 The simulation needs one post-measurement state per trajectory. In exact (no-shots) mode, PennyLane's `qml.measure` does not provide one. Checked on PennyLane 0.45:
 
@@ -38,23 +45,9 @@ The simulation needs one post-measurement state per trajectory. In exact (no-sho
 | `tree-traversal` | sums over all outcome branches | no: only averaged expectation values; `qml.state` and `qml.vn_entropy` are refused |
 | `one-shot` | samples outcomes, needs `shots` | no: state-based measurements are refused with finite shots |
 
-`default.clifford` behaves the same way. So `pennylane_sim` uses PennyLane's state-vector kernel `qml.devices.qubit.apply_operation`, the routine `default.qubit` runs internally, to apply each gate to a `(2,)*L` tensor. A gate costs about 4·2^L operations and no layer matrix is built. The Born-rule measurement is done by hand on the tensor. `pennylane_sim.circuit_qnode` builds the same circuit with `qml.measure`. It is used to check that the sampled trajectories reproduce PennyLane's exact outcome-averaged expectation values (`tests/test_mipt.py`).
+`default.clifford` behaves the same way. Applying the gates with PennyLane's own kernel (`qml.devices.qubit.apply_operation`) and measuring by hand works, but it was no faster than NumPy (2.6 s against 2.4 s at L = 20, and twice as slow at L = 12), so it was dropped.
 
-### Speed versus the MATLAB algorithm
-
-Seconds per trajectory at p = 0.17, depth 2L, on a 4-core cloud machine (`scripts/benchmark.py`). Divide by 2L for the time per layer.
-
-| L | `pennylane_sim` | `numpy_sim` | NumPy port of `randUnitaryMIstate.m` |
-|---|---|---|---|
-| 12 | 0.023 | 0.011 | 0.010 |
-| 16 | 0.14 | 0.12 | 0.12 |
-| 18 | 0.68 | 0.64 | 0.58 |
-| 20 | 2.6 | 2.4 | 2.7 |
-| 22 | 26 | 24 | 28 |
-
-For L ≥ 16 the three implementations run within about 10% of each other. Below that, PennyLane's per-gate overhead roughly doubles the time. The NumPy port runs the same steps as the MATLAB code (Kronecker-product layer, a state permutation for odd layers, a block projector), but this table does not time MATLAB itself. For a direct comparison, run `tic; randUnitaryMIstate(20, 0.17, 20); toc` in MATLAB.
-
-The bottom line is that PennyLane adds nothing here beyond a correct gate kernel. Larger L or many more trajectories would need a GPU or batched trajectories, not a different CPU library.
+What PennyLane does well here is exact outcome averages. `mipt_sim.pennylane_check.circuit_qnode` builds the same circuit with `qml.measure`, and `tests/test_mipt.py` checks that the Monte Carlo average over simulated trajectories reproduces PennyLane's tree-traversal expectation values. That test caught a bug in which some measurements were silently dropped.
 
 ## Possible next steps
 
@@ -67,9 +60,9 @@ The bottom line is that PennyLane adds nothing here beyond a correct gate kernel
 
 ```bash
 pip install -e ../multipartite-entanglement-detection-toolkit
-pip install -e .               # NumPy simulator only
-pip install -e ".[dev]"        # adds PennyLane, pytest, ruff, matplotlib
-pytest -q                      # 11 tests, a few seconds
+pip install -e .               # the simulator (NumPy only)
+pip install -e ".[dev]"        # adds PennyLane (for the cross-check), pytest, ruff, matplotlib
+pytest -q                      # 10 tests, a few seconds
 python scripts/sweep.py        # writes results/sweep.json (about 15 min on 4 cores)
 python scripts/plot.py         # writes results/entropy_vs_L.png
 python scripts/benchmark.py 12 16 20
@@ -77,11 +70,8 @@ python scripts/benchmark.py 12 16 20
 
 ```python
 import numpy as np
-from pl_mipt import run_trajectory, half_chain_entropy
+from mipt_sim import run_trajectory, half_chain_entropy
 
 psi = run_trajectory(14, 0.1, np.random.default_rng(0))   # L = 14 qubits, p = 0.1
 print(half_chain_entropy(psi))   # bits
-
-from pl_mipt import pennylane_sim  # same interface, PennyLane applies the gates
-psi = pennylane_sim.run_trajectory(14, 0.1, np.random.default_rng(0))
 ```

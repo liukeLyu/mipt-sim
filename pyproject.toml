@@ -3,9 +3,9 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pl-mipt"
+name = "mipt-sim"
 version = "0.1.0"
-description = "Measurement-induced phase transition in Haar brickwork circuits, simulated with PennyLane"
+description = "Measurement-induced phase transition in Haar brickwork circuits: a NumPy state-vector simulator"
 requires-python = ">=3.10"
 dependencies = ["numpy", "medt"]
 

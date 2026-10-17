@@ -1,14 +1,12 @@
 import numpy as np
-import pennylane as qml
 import pytest
 
-from pl_mipt import (
+from mipt_sim import (
     apply_gate,
     brickwork_pairs,
     haar_unitary,
     half_chain_entropy,
     measure_qubit,
-    pennylane_sim,
     random_circuit,
     region_entropy,
     run_circuit,
@@ -25,9 +23,12 @@ def random_state(n, rng):
 def test_gate_matches_dense_matrix(wires):
     rng = np.random.default_rng(0)
     psi, u = random_state(5, rng), haar_unitary(4, rng)
-    dense = qml.matrix(qml.QubitUnitary(u, wires=wires), wire_order=range(5)) @ psi.reshape(-1)
-    for gate in (apply_gate, pennylane_sim.apply_gate):
-        assert np.allclose(gate(psi, u, wires).reshape(-1), dense)
+    # dense 32 x 32 matrix of u on `wires`, built independently with einsum
+    i, j = wires
+    letters = "abcde"
+    out = letters.replace(letters[i], "x").replace(letters[j], "y")
+    full = np.einsum(f"xy{letters[i]}{letters[j]},{letters}->{out}", u.reshape(2, 2, 2, 2), psi)
+    assert np.allclose(apply_gate(psi, u, wires), full)
 
 
 def test_haar_unitary_is_unitary():
@@ -67,11 +68,14 @@ def test_no_measurement_reaches_volume_law_and_full_measurement_gives_product():
 def test_born_sampling_matches_pennylane_exact_average():
     """Monte Carlo average over trajectories of a fixed circuit equals PennyLane's
     exact outcome-averaged expectation values (tree-traversal mid-circuit measurements)."""
+    qml = pytest.importorskip("pennylane")
+    from mipt_sim.pennylane_check import circuit_qnode
+
     rng = np.random.default_rng(5)
     n, ntraj = 4, 20000
     layers = random_circuit(n, 0.5, rng, depth=4)
     obs = [qml.Z(0), qml.Z(0) @ qml.Z(2), qml.X(1), qml.Y(3)]
-    exact = np.array(pennylane_sim.circuit_qnode(n, layers, obs)())
+    exact = np.array(circuit_qnode(n, layers, obs)())
     mats = [qml.matrix(o, wire_order=range(n)) for o in obs]
     mc = np.zeros(len(obs))
     for _ in range(ntraj):
@@ -80,18 +84,10 @@ def test_born_sampling_matches_pennylane_exact_average():
     assert np.allclose(mc / ntraj, exact, atol=4 / np.sqrt(ntraj))
 
 
-def test_numpy_and_pennylane_simulators_give_the_same_trajectory():
-    """Same seed, same circuit, same outcomes: the two simulators must agree to rounding error."""
-    psi_np, s_np = run_trajectory(10, 0.2, np.random.default_rng(6), record=True)
-    psi_pl, s_pl = pennylane_sim.run_trajectory(10, 0.2, np.random.default_rng(6), record=True)
-    assert np.allclose(psi_np, psi_pl)
-    assert np.allclose(s_np, s_pl)
-
-
-def test_numpy_simulator_does_not_import_pennylane():
+def test_simulator_does_not_import_pennylane():
     import subprocess
     import sys
 
-    code = "import sys, pl_mipt; pl_mipt.run_trajectory(6, 0.3, __import__('numpy').random.default_rng(0)); "
+    code = "import sys, mipt_sim; mipt_sim.run_trajectory(6, 0.3, __import__('numpy').random.default_rng(0)); "
     code += "assert 'pennylane' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)

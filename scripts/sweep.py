@@ -14,7 +14,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")  # one core per worker process
 
 import numpy as np
 
-from pl_mipt import half_chain_entropy, run_trajectory
+from mipt_sim import half_chain_entropy, run_trajectory
 
 PS = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
 NTRAJ = {8: 800, 10: 600, 12: 400, 14: 300, 16: 200, 18: 100, 20: 40}

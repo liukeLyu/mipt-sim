@@ -1,7 +1,7 @@
 """Pure NumPy simulator of monitored Haar brickwork circuits (no PennyLane import).
 
-The state is a dense tensor of shape (2,) * n, wire 0 first (the same layout
-PennyLane uses internally, so states from both simulators can be compared directly).
+The state is a dense tensor of shape (2,) * n, wire 0 first (PennyLane's layout too,
+so states can be compared with PennyLane directly).
 A two-qubit gate is one ``np.tensordot`` on two axes, about 4 * 2^n operations;
 a Z measurement zeroes half of the tensor and renormalizes, with the outcome
 drawn by the Born rule.
@@ -80,17 +80,16 @@ def random_circuit(n: int, p: float, rng: np.random.Generator, depth: int | None
     ]
 
 
-def run_circuit(n: int, layers, rng: np.random.Generator, record: bool = False, gate=apply_gate):
+def run_circuit(n: int, layers, rng: np.random.Generator, record: bool = False):
     """Run one trajectory of a fixed circuit, sampling measurement outcomes with the Born rule.
 
     Returns the final state, or (state, half-chain entropy after each layer) if record.
-    ``gate(psi, u, wires)`` applies one two-qubit gate; pennylane_sim swaps in PennyLane's kernel.
     """
     psi = zero_state(n)
     history = []
     for gates, measured in layers:
         for wires, u in gates:
-            psi = gate(psi, u, wires)
+            psi = apply_gate(psi, u, wires)
         if measured:
             psi = np.ascontiguousarray(psi)  # one copy per layer, then measurements work in place
         for q in measured:

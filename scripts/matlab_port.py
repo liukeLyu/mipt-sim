@@ -7,7 +7,7 @@ projector P0 by zeroing a block), same layout (qubit 1 = most significant bit).
 
 import numpy as np
 
-from pl_mipt.circuit import haar_unitary
+from mipt_sim.circuit import haar_unitary
 
 
 def ckronx(us, psi):
