@@ -22,9 +22,9 @@ A guided tour is in [`examples/mipt_tour.ipynb`](examples/mipt_tour.ipynb).
 
 ## Area law versus volume law
 
-![half-chain entropy vs L](results/entropy_vs_L.png)
+![entropy vs subregion size](results/entropy_vs_ell_L20.png)
 
-The entanglement entropy of half the ring, averaged over trajectories. At p = 0.05 and 0.1 it grows linearly with L (volume law). At p = 0.3 and 0.5 it stays flat (area law). Near p_c it grows slowly, as log L at the critical point.
+The entanglement entropy S of ℓ consecutive qubits in a ring of L = 20, averaged over trajectories. At low p, S grows in proportion to ℓ (volume law). At high p it saturates after a few qubits (area law). In between, near p_c ≈ 0.17, it grows slowly, like log ℓ.
 
 ## Where measurements create entanglement
 
@@ -46,16 +46,16 @@ Here L = 18, p = 0.17, A = qubits (1, 2) and B = (8, 9). A and B themselves are 
 pip install git+https://github.com/liukeLyu/multipartite-entanglement-detection-toolkit   # install first: medt is a dependency and is not on PyPI
 pip install -e ".[dev]"        # the simulator, plus PennyLane, pytest, ruff and matplotlib
 pytest -q
-python scripts/sweep.py        # entropy sweep -> results/sweep.json
-python scripts/plot.py         # -> results/entropy_vs_L.png
+python scripts/subregion.py    # S versus subregion size at L = 20 -> results/subregion_L20.json
+python scripts/plot.py         # -> results/entropy_vs_ell_L20.png
 python scripts/ewg_run.py 20000   # sample trajectories -> results/ewg_L18_p0.17.npz
 python scripts/ewg_plot.py        # -> results/ewg_L18_p0.17.png
 ```
 
 ```python
 import numpy as np
-from mipt_sim import run_trajectory, half_chain_entropy
+from mipt_sim import interval_entropy, run_trajectory
 
 psi = run_trajectory(14, 0.1, np.random.default_rng(0))  # L = 14 qubits, p = 0.1
-print(half_chain_entropy(psi))  # bits
+print(interval_entropy(psi, 5))  # entropy of qubits 0-4, in bits
 ```
