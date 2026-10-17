@@ -91,3 +91,25 @@ def test_simulator_does_not_import_pennylane():
     code = "import sys, mipt_sim; mipt_sim.run_trajectory(6, 0.3, __import__('numpy').random.default_rng(0)); "
     code += "assert 'pennylane' not in sys.modules"
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_pair_weights_on_bell_pairs():
+    from mipt_sim.ewg import pair_weights
+
+    # qubits 0-2 and 1-3 in Bell states: A = {0, 1} and B = {2, 3} share two ebits
+    bell = np.array([[1, 0], [0, 1]]) / np.sqrt(2)
+    psi = np.einsum("ac,bd->abcd", bell, bell)
+    w = pair_weights(psi, [0, 1], [2, 3])
+    assert np.isclose(w["log_negativity"], 2)
+    assert np.isclose(w["negativity"], 1.5)
+    assert np.isclose(w["mutual_information"], 4)
+    w = pair_weights(psi, [0], [1])  # unentangled pair
+    assert np.isclose(w["negativity"], 0) and np.isclose(w["mutual_information"], 0)
+
+
+def test_weighted_graph_is_weighted_mean_of_records():
+    from mipt_sim.ewg import weighted_graph
+
+    records = np.array([[[1, 0]], [[0, 1]], [[1, 1]]], dtype=bool)
+    g = weighted_graph(records, np.array([1.0, 0.0, 3.0]))
+    assert np.allclose(g, [[1.0, 0.75]])

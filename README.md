@@ -4,9 +4,17 @@ The measurement-induced phase transition (MIPT) in Haar-random brickwork circuit
 
 A chain of L qubits evolves under random two-qubit gates. Each qubit is also measured with probability p after every layer. Gates create entanglement and measurements destroy it. At low p, the half-chain entanglement entropy grows with L (a **volume law**). At high p it saturates (an **area law**, which in 1D means a constant). For Haar gates on qubits, the transition sits near p_c ≈ 0.17 ([Zabalo et al., arXiv:1911.00008](https://arxiv.org/abs/1911.00008)). For background, see [Li, Chen & Fisher, arXiv:1808.06134](https://arxiv.org/abs/1808.06134), [Skinner, Ruhman & Nahum, arXiv:1808.05953](https://arxiv.org/abs/1808.05953), and the review by [Fisher, Khemani, Nahum & Vijay, arXiv:2207.14280](https://arxiv.org/abs/2207.14280).
 
+A guided tour with the circuit, both results and the distance decay from the paper is in [`examples/mipt_tour.ipynb`](examples/mipt_tour.ipynb).
+
 ![half-chain entropy vs L](results/entropy_vs_L.png)
 
 **Result** (`scripts/sweep.py`, L = 8 to 20, 40 to 800 trajectories per point, error bars are one standard error, about the size of the markers). At p = 0.05 and 0.1, S grows linearly in L, with a constant entropy density S/L of about 0.34 and 0.25 bits per qubit (volume law). At p = 0.3 and 0.5, S stays flat at about 1 bit and 0.25 bit (area law). Between them, p = 0.15 and 0.2 grow slowly while S/L drifts down. That is what sizes this small look like near p_c ≈ 0.17, where S grows like log L. Locating p_c precisely needs a finite-size collapse or a better probe, such as the tripartite mutual information used by Zabalo et al.
+
+## Entanglement-weighted graphs
+
+At the critical point, two distant regions are usually not entangled. An entanglement-weighted graph ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969), Sec. III B) averages the binary measurement record W(x, t) of each trajectory with weight equal to the entanglement it produced, Σ E·W / Σ E, which shows where measurements help or hurt. `scripts/ewg_run.py` samples L = 18, p = 0.17 with A = qubits (1, 2) and B = (8, 9) (1-based), and stores every record, its seed, and the negativity, log-negativity and mutual information between A and B (computed with `medt`). `scripts/ewg_plot.py` draws the graphs.
+
+![entanglement-weighted graphs](results/ewg_L18_p0.17.png)
 
 ## Model
 
@@ -62,10 +70,12 @@ What PennyLane does well here is exact outcome averages. `mipt_sim.pennylane_che
 pip install -e ../multipartite-entanglement-detection-toolkit
 pip install -e .               # the simulator (NumPy only)
 pip install -e ".[dev]"        # adds PennyLane (for the cross-check), pytest, ruff, matplotlib
-pytest -q                      # 10 tests, a few seconds
+pytest -q                      # 12 tests, a few seconds
 python scripts/sweep.py        # writes results/sweep.json (about 15 min on 4 cores)
 python scripts/plot.py         # writes results/entropy_vs_L.png
 python scripts/benchmark.py 12 16 20
+python scripts/ewg_run.py 20000   # writes results/ewg_L18_p0.17.npz (about 1 h on 4 cores)
+python scripts/ewg_plot.py        # writes results/ewg_L18_p0.17.png
 ```
 
 ```python
