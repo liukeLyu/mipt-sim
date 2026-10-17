@@ -7,3 +7,4 @@ results/ewg_shard_*.npz
 .sync/
 *.bundle
 results/*.log
+results/ewg_records_*.npz

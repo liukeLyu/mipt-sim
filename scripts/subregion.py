@@ -16,7 +16,7 @@ import numpy as np
 
 from mipt_sim import interval_entropy, run_trajectory
 
-PS = [0.0, 0.05, 0.1, 0.17, 0.3, 0.5]
+PS = [0.0, 0.05, 0.1, 0.17, 0.3, 0.5, 1.0]
 
 
 def one(args):

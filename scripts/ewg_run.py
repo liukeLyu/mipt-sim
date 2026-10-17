@@ -5,6 +5,7 @@ Trajectory k uses seed k, so disjoint seed ranges can run on different machines 
 merged with scripts/ewg_merge.py; any trajectory can be replayed from its seed.
 
 Usage: python scripts/ewg_run.py [count] [out.npz] [first_seed] [workers]
+The records file is large and stays out of git; scripts/ewg_plot.py turns it into a small summary.
 Saves after every chunk of 1000, so a partial run is usable.
 """
 
@@ -30,7 +31,7 @@ def one(seed):
 
 if __name__ == "__main__":
     total = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
-    out = sys.argv[2] if len(sys.argv) > 2 else f"results/ewg_L{L}_p{P}.npz"
+    out = sys.argv[2] if len(sys.argv) > 2 else f"results/ewg_records_L{L}_p{P}.npz"
     first = int(sys.argv[3]) if len(sys.argv) > 3 else 0
     workers = int(sys.argv[4]) if len(sys.argv) > 4 else None
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)

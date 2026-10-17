@@ -80,3 +80,16 @@ def symmetrized_graph(records: np.ndarray, weights: np.ndarray, a, b) -> np.ndar
     """Weighted graph over the samples and their mirror images (see mirror_sites)."""
     g = weighted_graph(records, weights)
     return (g + g[:, mirror_sites(g.shape[1], a, b)]) / 2
+
+
+def summarize(records: np.ndarray, weights: np.ndarray, n: int, p: float, a, b) -> dict:
+    """The small result worth keeping: the symmetrized graph, the parameters and the sample counts."""
+    return {
+        "graph": symmetrized_graph(records, weights, a, b),
+        "L": n,
+        "p": p,
+        "A": list(a),
+        "B": list(b),
+        "n": len(weights),
+        "n_entangled": int((weights > 1e-10).sum()),
+    }

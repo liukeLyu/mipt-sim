@@ -7,9 +7,13 @@ import json
 import sys
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-# one-hue ordinal ramp (light = few measurements, dark = many)
-BLUES = ["#9cc3f2", "#6aa5ea", "#3f86dd", "#2368c0", "#174f94", "#0d366b"]
+
+def page(l, n):  # average entropy (bits) of l qubits in a uniformly random state of n qubits
+    m, k = 2**l, 2 ** (n - l)
+    return (sum(1 / j for j in range(k + 1, m * k + 1)) - (m - 1) / (2 * k)) / np.log(2)
+
 
 L = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 with open(f"results/subregion_L{L}.json") as f:
@@ -18,17 +22,16 @@ ell = d["ell"]
 
 plt.rcParams.update({"font.size": 11, "axes.spines.top": False, "axes.spines.right": False})
 fig, ax = plt.subplots(figsize=(6.2, 4.3), constrained_layout=True)
-ax.plot(ell, ell, ls=":", lw=1.5, color="#8a8a86")
-ax.text(ell[-1], ell[-1], "  maximum, S = ℓ", va="center", color="#55554f", fontsize=9)
-for p, m, e, c in zip(d["p"], d["mean"], d["sem"], BLUES):
-    ax.errorbar(ell, m, e, color=c, lw=2, marker="o", ms=5, capsize=0)
-    ax.text(ell[-1] + 0.25, m[-1], f"p = {p:g}", va="center", color="#33332f", fontsize=9)
+ax.plot(ell, [page(l, L) for l in ell], ls="--", color="#33332f", zorder=3, label="random state (Page)")
+colors = plt.cm.Blues(np.linspace(0.35, 1, len(d["p"])))  # light = few measurements, dark = many
+for p, m, e, color in zip(d["p"], d["mean"], d["sem"], colors):
+    ax.errorbar(ell, m, e, color=color, lw=2, marker="o", ms=5, capsize=0, label=f"p = {p:g}")
 ax.set(
-    xlabel="subregion size ℓ (consecutive qubits)",
+    xlabel="block size ℓ (consecutive qubits)",
     ylabel="entanglement entropy S (bits)",
-    title=f"Entropy of a subregion, L = {L}",
-    xlim=(0.5, ell[-1] + 1.6),
+    title=f"Entropy of a block, L = {L}",
 )
 ax.set_xticks(ell)
+ax.legend(frameon=False, fontsize=9)
 fig.savefig(f"results/entropy_vs_ell_L{L}.png", dpi=150)
 print(f"wrote results/entropy_vs_ell_L{L}.png")

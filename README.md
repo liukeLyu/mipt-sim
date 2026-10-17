@@ -24,7 +24,7 @@ A guided tour is in [`examples/mipt_tour.ipynb`](examples/mipt_tour.ipynb).
 
 ![entropy vs subregion size](results/entropy_vs_ell_L20.png)
 
-The entanglement entropy S of ℓ consecutive qubits in a ring of L = 20, averaged over trajectories. At low p, S grows in proportion to ℓ (volume law). At high p it saturates after a few qubits (area law). In between, near p_c ≈ 0.17, it grows slowly, like log ℓ.
+The entanglement entropy S of a block of ℓ consecutive qubits in a ring of L = 20, averaged over trajectories. At p = 0 it follows the curve of a random state, close to the maximum ℓ. At p = 1 it is zero. In between, at low p, S still grows in proportion to ℓ (volume law); at high p it saturates after a few qubits (area law); near p_c ≈ 0.17 it grows slowly, like log ℓ.
 
 ## Where measurements create entanglement
 
@@ -48,8 +48,8 @@ pip install -e ".[dev]"        # the simulator, plus PennyLane, pytest, ruff and
 pytest -q
 python scripts/subregion.py    # S versus subregion size at L = 20 -> results/subregion_L20.json
 python scripts/plot.py         # -> results/entropy_vs_ell_L20.png
-python scripts/ewg_run.py 20000   # sample trajectories -> results/ewg_L18_p0.17.npz
-python scripts/ewg_plot.py        # -> results/ewg_L18_p0.17.png
+python scripts/ewg_run.py 20000   # sample trajectories -> results/ewg_records_L18_p0.17.npz (large, not committed)
+python scripts/ewg_plot.py        # -> results/ewg_graph_L18_p0.17.npz (small summary) and results/ewg_L18_p0.17.png
 ```
 
 ```python
