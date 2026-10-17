@@ -12,9 +12,11 @@ A guided tour with the circuit, both results and the distance decay from the pap
 
 ## Entanglement-weighted graphs
 
-At the critical point, two distant regions are usually not entangled. An entanglement-weighted graph ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969), Sec. III B) averages the binary measurement record W(x, t) of each trajectory with weight equal to the entanglement it produced, Σ E·W / Σ E, which shows where measurements help or hurt. `scripts/ewg_run.py` samples L = 18, p = 0.17 with A = qubits (1, 2) and B = (8, 9) (1-based), and stores every record, its seed, and the negativity, log-negativity and mutual information between A and B (computed with `medt`). `scripts/ewg_plot.py` draws the graphs.
+At the critical point, two distant regions are usually not entangled. An entanglement-weighted graph ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969), Sec. III B) averages the binary measurement record W(x, t) of each trajectory with weight equal to the entanglement it produced, Σ E·W / Σ E, which shows where measurements help or hurt. `scripts/ewg_run.py` samples L = 18, p = 0.17 with A = qubits (1, 2) and B = (8, 9) (1-based), and stores every record, its seed, and the negativity, log-negativity and mutual information between A and B. Trajectory k uses seed k, so runs on different machines can be merged with `scripts/ewg_merge.py`. `scripts/ewg_plot.py` draws the negativity-weighted graph for the last 20 time steps.
 
-![entanglement-weighted graphs](results/ewg_L18_p0.17.png)
+![entanglement-weighted graph](results/ewg_L18_p0.17.png)
+
+**Result** (261,500 trajectories, of which about 15,500 entangle A and B; bootstrap uncertainty about ±0.006 per cell). A and B are rarely measured at the very end, while the qubits between them are measured about twice as often as p in the last two layers. Below that, a low-measurement bulk (about 0.16) joins A and B for roughly six time steps, and a halo of extra measurements (0.18 to 0.24) covers the far side of the ring. This is the bulk-and-halo structure of the paper's Fig. 6, which used Mølmer–Sørensen gates instead of Haar gates. With only 20,000 trajectories the bulk was lost in the noise.
 
 ## Model
 
@@ -70,11 +72,13 @@ What PennyLane does well here is exact outcome averages. `mipt_sim.pennylane_che
 pip install -e ../multipartite-entanglement-detection-toolkit
 pip install -e .               # the simulator (NumPy only)
 pip install -e ".[dev]"        # adds PennyLane (for the cross-check), pytest, ruff, matplotlib
-pytest -q                      # 12 tests, a few seconds
+pytest -q                      # 13 tests, a few seconds
 python scripts/sweep.py        # writes results/sweep.json (about 15 min on 4 cores)
 python scripts/plot.py         # writes results/entropy_vs_L.png
 python scripts/benchmark.py 12 16 20
-python scripts/ewg_run.py 20000   # writes results/ewg_L18_p0.17.npz (about 1 h on 4 cores)
+python scripts/ewg_run.py 20000                     # writes results/ewg_L18_p0.17.npz (about 1 h on 4 cores)
+python scripts/ewg_run.py 200000 shard.npz 100000 12  # more samples: count, file, first seed, workers
+python scripts/ewg_merge.py merged.npz results/ewg_L18_p0.17.npz shard.npz   # merges shards, dropping repeated seeds
 python scripts/ewg_plot.py        # writes results/ewg_L18_p0.17.png
 ```
 
@@ -82,6 +86,6 @@ python scripts/ewg_plot.py        # writes results/ewg_L18_p0.17.png
 import numpy as np
 from mipt_sim import run_trajectory, half_chain_entropy
 
-psi = run_trajectory(14, 0.1, np.random.default_rng(0))   # L = 14 qubits, p = 0.1
-print(half_chain_entropy(psi))   # bits
+psi = run_trajectory(14, 0.1, np.random.default_rng(0))  # L = 14 qubits, p = 0.1
+print(half_chain_entropy(psi))  # bits
 ```
