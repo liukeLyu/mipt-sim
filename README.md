@@ -4,12 +4,12 @@ The measurement-induced phase transition (MIPT), simulated with a small NumPy st
 
 ## The idea
 
-Run a random circuit on a ring of L qubits, and look at the two extremes.
+Take a ring of L qubits. At every time step, apply random two-qubit gates to neighbouring pairs of qubits, then measure each qubit with probability p. Look first at the two extremes.
 
-- **No measurements.** The whole circuit is one big random unitary. It entangles every qubit with every other, so the entanglement of a region grows with its size: a **volume law**.
-- **Every qubit measured after every step.** Each measurement collapses its qubit, and the state ends as a product state, a string of 0s and 1s with no entanglement.
+- **No measurements (p = 0).** The whole circuit is one big random unitary. It entangles every qubit with every other, so the entanglement of a region grows with its size: a **volume law**.
+- **Every qubit measured after every step (p = 1).** Each measurement collapses its qubit, and the state ends as a product state, a string of 0s and 1s with no entanglement.
 
-In between, each qubit is measured with probability p after every layer of gates. Gates spread entanglement and measurements remove it. Below a critical rate p_c ≈ 0.17 the volume law survives. Above it, the entanglement of a region stays bounded however large the system is: an **area law**. For background, see the review by [Fisher, Khemani, Nahum & Vijay, arXiv:2207.14280](https://arxiv.org/abs/2207.14280), the original papers by [Li, Chen & Fisher, arXiv:1808.06134](https://arxiv.org/abs/1808.06134) and [Skinner, Ruhman & Nahum, arXiv:1808.05953](https://arxiv.org/abs/1808.05953), and [Zabalo et al., arXiv:1911.00008](https://arxiv.org/abs/1911.00008) for p_c.
+In between, gates spread entanglement and measurements remove it. Below a critical rate p_c ≈ 0.17 the volume law survives. Above it, the entanglement of a region stays bounded however large the system is: an **area law**. For background, see the review by [Fisher, Khemani, Nahum & Vijay, arXiv:2207.14280](https://arxiv.org/abs/2207.14280), the original papers by [Li, Chen & Fisher, arXiv:1808.06134](https://arxiv.org/abs/1808.06134) and [Skinner, Ruhman & Nahum, arXiv:1808.05953](https://arxiv.org/abs/1808.05953), and [Zabalo et al., arXiv:1911.00008](https://arxiv.org/abs/1911.00008) for p_c.
 
 A guided tour is in [`examples/mipt_tour.ipynb`](examples/mipt_tour.ipynb).
 
