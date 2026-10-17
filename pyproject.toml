@@ -7,10 +7,11 @@ name = "pl-mipt"
 version = "0.1.0"
 description = "Measurement-induced phase transition in Haar brickwork circuits, simulated with PennyLane"
 requires-python = ">=3.10"
-dependencies = ["numpy", "pennylane>=0.40", "medt"]
+dependencies = ["numpy", "medt"]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff", "matplotlib"]
+pennylane = ["pennylane>=0.40"]
+dev = ["pennylane>=0.40", "pytest", "ruff", "matplotlib"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

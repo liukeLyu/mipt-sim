@@ -1,19 +1,15 @@
-"""Monitored-circuit trajectories on a dense state vector.
+"""Pure NumPy simulator of monitored Haar brickwork circuits (no PennyLane import).
 
-The state is a tensor of shape (2,) * n (PennyLane's internal layout, wire 0 first).
-Gates go through PennyLane's state-vector kernel
-(``qml.devices.qubit.apply_operation``, what ``default.qubit`` runs internally),
-or through an equivalent ``np.tensordot`` when ``backend="numpy"``.
-Measurements are sampled with the Born rule directly on the tensor, because in
-exact mode PennyLane's ``qml.measure`` either adds an ancilla per measurement
-(deferred) or averages over outcomes (tree traversal), and never hands back the
-post-measurement state of a single trajectory.
+The state is a dense tensor of shape (2,) * n, wire 0 first (the same layout
+PennyLane uses internally, so states from both simulators can be compared directly).
+A two-qubit gate is one ``np.tensordot`` on two axes, about 4 * 2^n operations;
+a Z measurement zeroes half of the tensor and renormalizes, with the outcome
+drawn by the Born rule.
 """
 
 from __future__ import annotations
 
 import numpy as np
-import pennylane as qml
 
 from .circuit import brickwork_pairs, haar_unitary
 
@@ -24,10 +20,8 @@ def zero_state(n: int) -> np.ndarray:
     return psi
 
 
-def apply_gate(psi: np.ndarray, u: np.ndarray, wires: tuple[int, int], backend: str = "pennylane") -> np.ndarray:
+def apply_gate(psi: np.ndarray, u: np.ndarray, wires: tuple[int, int]) -> np.ndarray:
     """Apply a 4 x 4 unitary to two wires of the state tensor. Cost ~ 4 * 2^n."""
-    if backend == "pennylane":
-        return qml.devices.qubit.apply_operation(qml.QubitUnitary(u, wires=wires, unitary_check=False), psi)
     i, j = wires
     out = np.tensordot(u.reshape(2, 2, 2, 2), psi, axes=[[2, 3], [i, j]])
     return np.moveaxis(out, [0, 1], [i, j])
@@ -86,16 +80,17 @@ def random_circuit(n: int, p: float, rng: np.random.Generator, depth: int | None
     ]
 
 
-def run_circuit(n: int, layers, rng: np.random.Generator, backend: str = "pennylane", record: bool = False):
+def run_circuit(n: int, layers, rng: np.random.Generator, record: bool = False, gate=apply_gate):
     """Run one trajectory of a fixed circuit, sampling measurement outcomes with the Born rule.
 
     Returns the final state, or (state, half-chain entropy after each layer) if record.
+    ``gate(psi, u, wires)`` applies one two-qubit gate; pennylane_sim swaps in PennyLane's kernel.
     """
     psi = zero_state(n)
     history = []
     for gates, measured in layers:
         for wires, u in gates:
-            psi = apply_gate(psi, u, wires, backend)
+            psi = gate(psi, u, wires)
         if measured:
             psi = np.ascontiguousarray(psi)  # one copy per layer, then measurements work in place
         for q in measured:
@@ -105,34 +100,6 @@ def run_circuit(n: int, layers, rng: np.random.Generator, backend: str = "pennyl
     return (psi, history) if record else psi
 
 
-def run_trajectory(
-    n: int,
-    p: float,
-    rng: np.random.Generator,
-    depth: int | None = None,
-    backend: str = "pennylane",
-    record: bool = False,
-):
+def run_trajectory(n: int, p: float, rng: np.random.Generator, depth: int | None = None, record: bool = False):
     """Draw a random circuit and run one trajectory of it. See random_circuit and run_circuit."""
-    return run_circuit(n, random_circuit(n, p, rng, depth), rng, backend, record)
-
-
-def circuit_qnode(n: int, layers, observables, mcm_method: str = "tree-traversal"):
-    """The same monitored circuit as a native PennyLane QNode with qml.measure.
-
-    In exact mode PennyLane averages over measurement outcomes, so this returns
-    trajectory-averaged expectation values (useful to check run_circuit's sampling),
-    not per-trajectory entropies.
-    """
-    dev = qml.device("default.qubit", wires=n)
-
-    @qml.qnode(dev, mcm_method=mcm_method)
-    def circuit():
-        for gates, measured in layers:
-            for wires, u in gates:
-                qml.QubitUnitary(u, wires=wires)
-            for q in measured:
-                qml.measure(q)
-        return [qml.expval(o) for o in observables]
-
-    return circuit
+    return run_circuit(n, random_circuit(n, p, rng, depth), rng, record)

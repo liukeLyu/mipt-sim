@@ -17,6 +17,17 @@ The model matches `Repo/QuantumCircuit/randUnitaryMIstate.m`:
 - After every layer, each qubit is measured in Z with probability p. The outcome is drawn with the Born rule.
 - The circuit has depth 2L layers. The half-chain von Neumann entropy (in bits) is averaged over trajectories and over two neighbouring cut positions. At large p, the entropy depends on whether the last layer acted on the cut bond, which gives an even/odd effect in L/2.
 
+## Two simulators
+
+Both run the same algorithm on a dense `(2,)*L` state tensor and share the measurement and entropy code. Given the same random seed, they produce the same trajectory to rounding error (`tests/test_mipt.py`).
+
+| module | gates applied by | needs PennyLane | use it for |
+|---|---|---|---|
+| `pl_mipt.numpy_sim` (also `pl_mipt.*`) | one `np.tensordot` per gate | no | production runs: the faster of the two, easier to read, and the natural starting point for a GPU port (swap NumPy for CuPy or JAX) |
+| `pl_mipt.pennylane_sim` | PennyLane's `apply_operation` kernel | yes | comparing with PennyLane, and `circuit_qnode`, the circuit as a native QNode with `qml.measure` |
+
+The sweep below uses `numpy_sim`.
+
 ## How PennyLane is used, and where it falls short
 
 The simulation needs one post-measurement state per trajectory. In exact (no-shots) mode, PennyLane's `qml.measure` does not provide one. Checked on PennyLane 0.45:
@@ -27,13 +38,13 @@ The simulation needs one post-measurement state per trajectory. In exact (no-sho
 | `tree-traversal` | sums over all outcome branches | no: only averaged expectation values; `qml.state` and `qml.vn_entropy` are refused |
 | `one-shot` | samples outcomes, needs `shots` | no: state-based measurements are refused with finite shots |
 
-`default.clifford` behaves the same way. So this project uses PennyLane's state-vector kernel `qml.devices.qubit.apply_operation`, the routine `default.qubit` runs internally, to apply each gate to a `(2,)*L` tensor. A gate costs about 4·2^L operations and no layer matrix is built. The Born-rule measurement is done by hand on the tensor. A native QNode version, `circuit_qnode`, builds the same circuit with `qml.measure`. It is used to check that the sampled trajectories reproduce PennyLane's exact outcome-averaged expectation values (`tests/test_mipt.py`).
+`default.clifford` behaves the same way. So `pennylane_sim` uses PennyLane's state-vector kernel `qml.devices.qubit.apply_operation`, the routine `default.qubit` runs internally, to apply each gate to a `(2,)*L` tensor. A gate costs about 4·2^L operations and no layer matrix is built. The Born-rule measurement is done by hand on the tensor. `pennylane_sim.circuit_qnode` builds the same circuit with `qml.measure`. It is used to check that the sampled trajectories reproduce PennyLane's exact outcome-averaged expectation values (`tests/test_mipt.py`).
 
 ### Speed versus the MATLAB algorithm
 
 Seconds per trajectory at p = 0.17, depth 2L, on a 4-core cloud machine (`scripts/benchmark.py`). Divide by 2L for the time per layer.
 
-| L | PennyLane kernel | NumPy `tensordot` | NumPy port of `randUnitaryMIstate.m` |
+| L | `pennylane_sim` | `numpy_sim` | NumPy port of `randUnitaryMIstate.m` |
 |---|---|---|---|
 | 12 | 0.023 | 0.011 | 0.010 |
 | 16 | 0.14 | 0.12 | 0.12 |
@@ -56,8 +67,9 @@ The bottom line is that PennyLane adds nothing here beyond a correct gate kernel
 
 ```bash
 pip install -e ../multipartite-entanglement-detection-toolkit
-pip install -e ".[dev]"
-pytest -q                      # 9 tests, a few seconds
+pip install -e .               # NumPy simulator only
+pip install -e ".[dev]"        # adds PennyLane, pytest, ruff, matplotlib
+pytest -q                      # 11 tests, a few seconds
 python scripts/sweep.py        # writes results/sweep.json (about 15 min on 4 cores)
 python scripts/plot.py         # writes results/entropy_vs_L.png
 python scripts/benchmark.py 12 16 20
@@ -69,4 +81,7 @@ from pl_mipt import run_trajectory, half_chain_entropy
 
 psi = run_trajectory(14, 0.1, np.random.default_rng(0))   # L = 14 qubits, p = 0.1
 print(half_chain_entropy(psi))   # bits
+
+from pl_mipt import pennylane_sim  # same interface, PennyLane applies the gates
+psi = pennylane_sim.run_trajectory(14, 0.1, np.random.default_rng(0))
 ```

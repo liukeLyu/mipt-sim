@@ -5,10 +5,10 @@ import pytest
 from pl_mipt import (
     apply_gate,
     brickwork_pairs,
-    circuit_qnode,
     haar_unitary,
     half_chain_entropy,
     measure_qubit,
+    pennylane_sim,
     random_circuit,
     region_entropy,
     run_circuit,
@@ -26,8 +26,8 @@ def test_gate_matches_dense_matrix(wires):
     rng = np.random.default_rng(0)
     psi, u = random_state(5, rng), haar_unitary(4, rng)
     dense = qml.matrix(qml.QubitUnitary(u, wires=wires), wire_order=range(5)) @ psi.reshape(-1)
-    for backend in ("pennylane", "numpy"):
-        assert np.allclose(apply_gate(psi, u, wires, backend).reshape(-1), dense)
+    for gate in (apply_gate, pennylane_sim.apply_gate):
+        assert np.allclose(gate(psi, u, wires).reshape(-1), dense)
 
 
 def test_haar_unitary_is_unitary():
@@ -71,10 +71,27 @@ def test_born_sampling_matches_pennylane_exact_average():
     n, ntraj = 4, 20000
     layers = random_circuit(n, 0.5, rng, depth=4)
     obs = [qml.Z(0), qml.Z(0) @ qml.Z(2), qml.X(1), qml.Y(3)]
-    exact = np.array(circuit_qnode(n, layers, obs)())
+    exact = np.array(pennylane_sim.circuit_qnode(n, layers, obs)())
     mats = [qml.matrix(o, wire_order=range(n)) for o in obs]
     mc = np.zeros(len(obs))
     for _ in range(ntraj):
-        v = run_circuit(n, layers, rng, backend="numpy").reshape(-1)
+        v = run_circuit(n, layers, rng).reshape(-1)
         mc += [np.vdot(v, m @ v).real for m in mats]
     assert np.allclose(mc / ntraj, exact, atol=4 / np.sqrt(ntraj))
+
+
+def test_numpy_and_pennylane_simulators_give_the_same_trajectory():
+    """Same seed, same circuit, same outcomes: the two simulators must agree to rounding error."""
+    psi_np, s_np = run_trajectory(10, 0.2, np.random.default_rng(6), record=True)
+    psi_pl, s_pl = pennylane_sim.run_trajectory(10, 0.2, np.random.default_rng(6), record=True)
+    assert np.allclose(psi_np, psi_pl)
+    assert np.allclose(s_np, s_pl)
+
+
+def test_numpy_simulator_does_not_import_pennylane():
+    import subprocess
+    import sys
+
+    code = "import sys, pl_mipt; pl_mipt.run_trajectory(6, 0.3, __import__('numpy').random.default_rng(0)); "
+    code += "assert 'pennylane' not in sys.modules"
+    subprocess.run([sys.executable, "-c", code], check=True)
