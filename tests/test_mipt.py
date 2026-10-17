@@ -113,3 +113,18 @@ def test_weighted_graph_is_weighted_mean_of_records():
     records = np.array([[[1, 0]], [[0, 1]], [[1, 1]]], dtype=bool)
     g = weighted_graph(records, np.array([1.0, 0.0, 3.0]))
     assert np.allclose(g, [[1.0, 0.75]])
+
+
+def test_pair_weights_match_medt():
+    from medt import keep_systems, log_negativity
+
+    from mipt_sim.ewg import pair_weights
+
+    psi = random_state(8, np.random.default_rng(7))
+    a, b = [0, 1], [5, 6]
+    rho = keep_systems(psi.reshape(-1), a + b, [2] * 8)
+    w = pair_weights(psi, a, b)
+    assert np.isclose(w["log_negativity"], max(log_negativity(rho, [0, 1], [2] * 4), 0))
+    assert np.isclose(
+        w["mutual_information"], region_entropy(psi, a) + region_entropy(psi, b) - region_entropy(psi, a + b)
+    )
