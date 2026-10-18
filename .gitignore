@@ -8,3 +8,6 @@ results/ewg_shard_*.npz
 *.bundle
 results/*.log
 results/ewg_records_*.npz
+
+# Local Claude instructions, never commit
+CLAUDE.md
