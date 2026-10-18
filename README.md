@@ -1,6 +1,6 @@
 # mipt-sim
 
-*Why I built this.* In [arXiv:2602.04969](https://arxiv.org/abs/2602.04969) my collaborators and I studied how entanglement between distant regions behaves at the measurement-induced transition. I wanted a version of that study small enough to read every line of, which reproduces the key pictures on a laptop and lets anyone play with them.
+*Why I built this.* I wanted to make my paper on the measurement-induced transition ([Lyu et al., arXiv:2602.04969](https://arxiv.org/abs/2602.04969)) more accessible. More generally, the MIPT is a competition between two forces: local quantum gates entangle, and measurements disentangle. I find it interesting to ask what this means for quantum algorithms. What are the entanglement characteristics of a quantum algorithm?
 
 The measurement-induced phase transition (MIPT), simulated with a small NumPy state-vector code.
 
