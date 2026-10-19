@@ -65,3 +65,5 @@ from mipt_sim import interval_entropy, run_trajectory
 psi = run_trajectory(14, 0.1, np.random.default_rng(0))  # L = 14 qubits, p = 0.1
 print(interval_entropy(psi, 5))  # entropy of qubits 0-4, in bits
 ```
+
+If this project helped you, you can [sponsor me on GitHub](https://github.com/sponsors/liukeLyu) ♥
