@@ -66,4 +66,4 @@ psi = run_trajectory(14, 0.1, np.random.default_rng(0))  # L = 14 qubits, p = 0.
 print(interval_entropy(psi, 5))  # entropy of qubits 0-4, in bits
 ```
 
-If this project helped you, you can [sponsor me on GitHub](https://github.com/sponsors/liukeLyu) ♥
+If this project helped you, you can [sponsor me on GitHub](https://github.com/sponsors/liukeLyu) or on [爱发电 Afdian](https://afdian.com/a/liukelyu) ♥
